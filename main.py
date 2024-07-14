@@ -3,10 +3,10 @@ from discord.ext import commands
 import logging
 import random
 import asyncio
-import os
 from dotenv import load_dotenv
+import os
 
-# Load environment variables from .env
+# Load environment variables from .env file
 load_dotenv()
 
 # Initialize the bot
@@ -60,9 +60,9 @@ results = {
 asked_questions = {}
 
 # Command to start the quiz
-@bot.command(name='startquiz')
-async def start_quiz(ctx):
-    logger.info(f"StartQuiz command invoked by {ctx.author}")  # Log the command invocation
+@bot.command(name='invoke')
+async def quiz(ctx):
+    logger.info(f"Quiz command invoked by {ctx.author}")  # Log the command invocation
     user_answers = []
 
     # Initialize asked_questions for the user
