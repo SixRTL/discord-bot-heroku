@@ -3,10 +3,10 @@ from discord.ext import commands
 import logging
 import random
 import asyncio
-from dotenv import load_dotenv
 import os
+from dotenv import load_dotenv
 
-# Load environment variables from .env file
+# Load environment variables from .env
 load_dotenv()
 
 # Initialize the bot
