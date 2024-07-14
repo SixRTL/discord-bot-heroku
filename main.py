@@ -60,7 +60,7 @@ results = {
 asked_questions = {}
 
 # Command to start the quiz
-@client.command(name='invoke')
+@bot.command(name='invoke')
 async def quiz(ctx):
     logger.info(f"Quiz command invoked by {ctx.author}")  # Log the command invocation
     user_answers = []
@@ -146,4 +146,4 @@ async def on_ready():
     logger.info(f'Logged in as {bot.user.name} ({bot.user.id})')  # Log the bot's login
 
 # Run the bot
-bot.run(os.getenv('DISCORD_TOKEN'))
+@bot.run(os.getenv('DISCORD_TOKEN'))
