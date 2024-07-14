@@ -17,10 +17,10 @@ intents.members = True  # Ensure the bot can manage members and roles
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)  # You can adjust the logging level here
+logging.basicConfig(level=logging.INFO)  # Adjust logging level as needed
 logger = logging.getLogger()
 
-# Define the quiz questions and answers
+# Define quiz questions and results (keep this part as per your original data structure)
 questions = [
     {"question": "Your favourite person's birthday is coming up. What do you get them?", "answers": ["A two-way ticket to a great vacation!", "A book of their favourite genre.", "A cute plushie.", "A cool new jacket!"]},
     {"question": "What is your ideal vacation?", "answers": ["A thrilling adventure!", "A peaceful retreat.", "A nature hike.", "A fun trip with friends!"]},
@@ -30,7 +30,6 @@ questions = [
     {"question": "Your friend makes a joke that kind of hurt your feelings. What do you do?", "answers": ["Laugh along with them! It's funny!", "Stay silent.", "Cry a little bit, but don't let them know.", "Be honest with them and say it hurt."]},
 ]
 
-# Define Pokémon natures and recommended starter Pokémon based on answers
 results = {
     "A two-way ticket to a great vacation!": {"nature": "Jolly", "pokemon": "Charmander", "description": "Jolly nature is energetic and loves adventure. Alternate suggestion: Bagon."},
     "Stay silent.": {"nature": "Lonely", "pokemon": "Turtwig", "description": "Lonely nature is soul with a kind heart. Alternate suggestion: Gible."},
@@ -62,7 +61,8 @@ asked_questions = {}
 # Command to start the quiz
 @bot.command(name='invoke')
 async def quiz(ctx):
-    logger.info(f"Quiz command invoked by {ctx.author}")  # Log the command invocation
+    logger.info(f"Quiz command invoked by {ctx.author}")
+
     user_answers = []
 
     # Initialize asked_questions for the user
@@ -85,7 +85,7 @@ async def quiz(ctx):
 
         try:
             await ctx.author.send(prompt)
-            logger.info(f"Sent question to {ctx.author}: {prompt}")  # Log the question sent
+            logger.info(f"Sent question to {ctx.author}: {prompt}")
 
             def check(m):
                 return m.author == ctx.author and isinstance(m.channel, discord.DMChannel)
@@ -94,14 +94,14 @@ async def quiz(ctx):
             answer_index = int(msg.content) - 1
             if 0 <= answer_index < len(answers):
                 user_answers.append(answers[answer_index])
-                logger.info(f"{ctx.author} answered: {answers[answer_index]}")  # Log the answer received
+                logger.info(f"{ctx.author} answered: {answers[answer_index]}")
             else:
                 await ctx.author.send("Invalid choice. Please choose a valid option.")
-                logger.warning(f"{ctx.author} provided invalid choice: {msg.content}")  # Log invalid choice
+                logger.warning(f"{ctx.author} provided invalid choice: {msg.content}")
                 return
         except asyncio.TimeoutError:
             await ctx.author.send("You took too long to respond.")
-            logger.warning(f"{ctx.author} took too long to respond.")  # Log timeout
+            logger.warning(f"{ctx.author} took too long to respond.")
             return
 
         # Add the asked question to the user's set
@@ -120,7 +120,7 @@ async def quiz(ctx):
         if role:
             try:
                 await ctx.author.add_roles(role)
-                logger.info(f"Assigned role {role.name} to {ctx.author}")  # Log the role assignment
+                logger.info(f"Assigned role {role.name} to {ctx.author}")
             except discord.Forbidden:
                 await ctx.author.send(f"I do not have permission to assign the role '{nature}'. Please make sure the role exists and is above my role in the role hierarchy.")
                 logger.error(f"Permission error when assigning role '{nature}' to {ctx.author}")
@@ -132,7 +132,7 @@ async def quiz(ctx):
             logger.warning(f"Role '{nature}' does not exist for {ctx.author}")
 
         await ctx.author.send(f"Based on your answers, your Pokémon nature is **{nature}**.\nRecommended Starter Pokémon: **{pokemon}**\n{description}")
-        logger.info(f"{ctx.author}'s Pokémon nature result: {nature}, Starter Pokémon: {pokemon}")  # Log the final result
+        logger.info(f"{ctx.author}'s Pokémon nature result: {nature}, Starter Pokémon: {pokemon}")
     else:
         await ctx.author.send("No valid answers were received. Please try again.")
         logger.warning(f"No valid answers received from {ctx.author}")
@@ -143,7 +143,7 @@ async def quiz(ctx):
 # Event when the bot is ready
 @bot.event
 async def on_ready():
-    logger.info(f'Logged in as {bot.user.name} ({bot.user.id})')  # Log the bot's login
+    logger.info(f'Logged in as {bot.user.name} ({bot.user.id})')
 
 # Run the bot
-@bot.run(os.getenv('DISCORD_TOKEN'))
+bot.run(os.getenv('DISCORD_TOKEN'))
