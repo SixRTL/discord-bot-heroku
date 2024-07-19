@@ -56,6 +56,17 @@ results = {
     "Playing games with friends!": {"nature": "Bold", "pokemon": "Riolu", "description": "Bold nature is fun-loving and enjoys games with friends. Alternate suggestion: Gible."},
 }
 
+# Modified additional question for users with "Unknown" result
+additional_question = {
+    "question": "A foreigner has started up a conversation with you. To be honest, you don't have a clue what this fellow is saying. How do you reply?",
+    "answers": [
+        "Smile and nod politely, hoping they'll change the subject.",
+        "Try to decipher their words and respond with what you think they're talking about.",
+        "Apologize and explain that you don't understand their language.",
+        "Start a conversation in your own language, hoping they'll understand."
+    ]
+}
+
 # Dictionary to keep track of asked questions for each user
 asked_questions = {}
 
@@ -131,6 +142,59 @@ async def quiz(ctx):
             await ctx.author.send(f"Role '{nature}' does not exist. Please create a role with this name.")
             logger.warning(f"Role '{nature}' does not exist for {ctx.author}")
 
+        if nature == "Unknown":
+            # Ask additional question
+            await ctx.author.send(f"Your result is 'Unknown'. Let me ask you one more question to determine your nature.")
+            additional_answers = []
+
+            # Ask the additional question
+            additional_prompt = f"{additional_question['question']}\n" + "\n".join([f"{i+1}. {a}" for i, a in enumerate(additional_question['answers'])])
+            await ctx.author.send(additional_prompt)
+            logger.info(f"Sent additional question to {ctx.author}: {additional_prompt}")  # Log the additional question sent
+
+            try:
+                msg = await bot.wait_for('message', timeout=120.0, check=check)
+                additional_answer_index = int(msg.content) - 1
+                if 0 <= additional_answer_index < len(additional_question['answers']):
+                    additional_answers.append(additional_question['answers'][additional_answer_index])
+                    logger.info(f"{ctx.author} answered additional question: {additional_question['answers'][additional_answer_index]}")  # Log the additional answer received
+                else:
+                    await ctx.author.send("Invalid choice. Please choose a valid option.")
+                    logger.warning(f"{ctx.author} provided invalid choice for additional question: {msg.content}")  # Log invalid choice
+                    return
+            except asyncio.TimeoutError:
+                await ctx.author.send("You took too long to respond to the additional question.")
+                logger.warning(f"{ctx.author} took too long to respond to the additional question.")  # Log timeout
+                return
+
+            # Determine the nature based on the additional answer
+            if additional_answers:
+                additional_most_common_answer = max(set(additional_answers), key=additional_answers.count)
+                result = results.get(additional_most_common_answer, {"nature": "Unknown", "pokemon": "Unknown", "description": "No suitable nature found."})
+                nature = result["nature"]
+                pokemon = result["pokemon"]
+                description = result["description"]
+
+                # Find the role based on the nature name again
+                role = discord.utils.get(ctx.guild.roles, name=nature)
+                if role:
+                    try:
+                        await ctx.author.add_roles(role)
+                        logger.info(f"Assigned role {role.name} to {ctx.author}")  # Log the role assignment
+                    except discord.Forbidden:
+                        await ctx.author.send(f"I do not have permission to assign the role '{nature}'. Please make sure the role exists and is above my role in the role hierarchy.")
+                        logger.error(f"Permission error when assigning role '{nature}' to {ctx.author}")
+                    except discord.HTTPException as e:
+                        await ctx.author.send(f"An error occurred while assigning the role '{nature}'.")
+                        logger.error(f"HTTP Exception: {e}")
+                else:
+                    await ctx.author.send(f"Role '{nature}' does not exist. Please create a role with this name.")
+                    logger.warning(f"Role '{nature}' does not exist for {ctx.author}")
+
+            else:
+                await ctx.author.send("No valid answers were received for the additional question. Please try again.")
+                logger.warning(f"No valid answers received for additional question from {ctx.author}")
+
         await ctx.author.send(f"Based on your answers, your Pokémon nature is **{nature}**.\nRecommended Starter Pokémon: **{pokemon}**\n{description}")
         logger.info(f"{ctx.author}'s Pokémon nature result: {nature}, Starter Pokémon: {pokemon}")  # Log the final result
     else:
@@ -140,10 +204,11 @@ async def quiz(ctx):
     # Remove the user from asked_questions to reset for next session (optional)
     del asked_questions[ctx.author.id]
 
-# Event when the bot is ready
+# Event to perform actions when the bot is ready
 @bot.event
 async def on_ready():
-    logger.info(f'Logged in as {bot.user.name} ({bot.user.id})')  # Log the bot's login
+    logger.info(f'Logged in as {bot.user.name} (ID: {bot.user.id})')
+    logger.info('------')
 
-# Run the bot
+# Run the bot with the token
 bot.run(os.getenv('DISCORD_TOKEN'))
